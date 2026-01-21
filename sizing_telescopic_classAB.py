@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 """
-Telescopic cascode Stage-1 sizing + bias helper for EE140 LCD driver project
-(using YOUR final schematic W/L targets).
+Telescopic cascode sizing + bias:
 
-What this script does:
 - Loads gm/Id LUTs via look_up.py (nch_2v.mat, pch_2v.mat, etc.)
 - "Back-solves" gm/Id that matches your *actual* schematic W (given Id, L, VDS)
 - Reports device metrics (W, L, Id, gm, ro, VGS, VOV, gm/Id)
@@ -14,21 +12,12 @@ What this script does:
     * VBP_load (PMOS load/mirror gate bias)
     * VTAIL_bias (tail current source gate bias)
 
-IMPORTANT:
-- This is for the **Stage-1 telescopic cascode** shown in your schematic.
-- If your Stage-2 (class-AB) exists, size/bias it separately.
-- If any solved bias violates your Cadence operating point (VDSAT margin),
-  tweak Vds guesses, margins, or currents, then re-run.
-
-YOUR SCHEMATIC (read from the image):
 - Top PMOS loads (pmos2v):        L=0.25u, W=249.89u  (M6, M2)
 - PMOS cascodes (pmos2v):         L=0.25u, W=249.89u  (M7, M3)
 - NMOS cascodes (nmos2v):         L=0.50u, W=16.00u   (M8, M4)
 - Input NMOS pair (nmos2v):       L=0.50u, W=13.15u   (M9, M5)
 - Bias mirror devices (nmos2v):   L=0.50u, W=0.60u (M1 diode), W=1.10u (M0 mirror)
 
-NOTE: Tail device (often "M10") W/L was not clearly visible in the screenshot,
-so it's left as a parameter (defaults chosen to be reasonable).
 """
 
 import numpy as np
@@ -218,9 +207,6 @@ def size_and_bias_telescopic(params, nch_2, pch_2):
     # For PMOS cascode: Ntop - Vout >= vov_pcas + margin
     # For PMOS load:    VDDH - Ntop >= vov_pload + margin  -> Ntop <= VDDH - (vov_pload + margin)
     # So Ntop must satisfy: Ntop >= Vout + (vov_pcas + margin) and Ntop <= VDDH - (vov_pload + margin)
-    # We'll pick Ntop midrange and back out Vout, etc.
-    # First compute feasible Ntop range in terms of Vout:
-    # We don't know Vout yet, but we can pick Ntop first and then place Vout below it.
     Ntop_max = VDDH - (vov_pload + margin)
 
     # Pick Ntop (headroom-friendly)
@@ -263,7 +249,7 @@ def size_and_bias_telescopic(params, nch_2, pch_2):
         "VDDH": VDDH,
         "Vtail": Vtail,
         "N1": N1,
-        "Vout_cm": Vout,     # this is your V_stage1
+        "Vout_cm": Vout,     # this is V_stage1
         "Ntop": Ntop,
         "Vin_cm": Vin_cm,
         "VBN_ncas": VBN,
@@ -283,10 +269,7 @@ def size_and_bias_telescopic(params, nch_2, pch_2):
 
     return results, bias
 
-
-# ---------------------------------------------------------------------
-# Pretty printing
-# ---------------------------------------------------------------------
+#----------------------------------------------------------------
 
 def print_results(results, bias):
     print("=== Stage-1 Telescopic Cascode – Device Summary ===")
@@ -326,7 +309,7 @@ def print_results(results, bias):
 # ---------------------------------------------------------------------
 
 def main():
-    # Load gm/Id tables (2V devices for your stage-1 stack off VDDH=1.8V)
+    # Load gm/Id tables (2V devices for  stage-1 stack off VDDH=1.8V)
     nch_2 = importdata("nch_2v.mat")
     pch_2 = importdata("pch_2v.mat")
 
@@ -335,12 +318,11 @@ def main():
         "VSS": 0.0,
         "VDDH": 1.8,
 
-        # From your operating point readouts: branch currents ~35uA/side
-        # (Adjust Itail if your op point differs)
+        # From operating point readouts: branch currents ~35uA/side
         "Itail": 70e-6,        # total tail current (A)  -> ~35uA/side
-        "I_bias_ref": 6e-6,    # your bias mirror reference current (A) (M1/M0 block)
+        "I_bias_ref": 6e-6,    # bias mirror reference current (A) (M1/M0 block)
 
-        # YOUR schematic W/L targets (um)
+        # schematic W/L targets (um)
         "L_in":   0.50,  "W_in":   13.15,     # M9/M5
         "L_ncas": 0.50,  "W_ncas": 16.00,     # M8/M4
         "L_pcas": 0.25,  "W_pcas": 249.89,    # M7/M3
@@ -351,21 +333,20 @@ def main():
         "W_M0_mirror": 1.10,                 # M0
 
         # Tail device (not clearly visible in screenshot): choose something reasonable
-        # If you later confirm W/L in schematic, update these.
         "L_tail": 0.50,  "W_tail": 1.50,
 
-        # LUT VDS guesses (keep these close to your Cadence DC operating points)
-        "vds_in":    0.24,   # input NMOS VDS ~ 0.24V seen in your screenshot
+        # LUT VDS guesses (keep these close to Cadence DC operating points)
+        "vds_in":    0.24,   # input NMOS VDS ~ 0.24V 
         "vds_ncas":  0.42,   # NMOS cascode VDS ~ 0.42V-ish
         "vds_pcas":  0.43,   # PMOS cascode VSD magnitude ~0.43V-ish (use as "vds" to LUT)
         "vds_pload": 0.43,   # PMOS load VSD magnitude ~0.43V-ish
-        "vds_bias":  0.59,   # bias mirror devices around ~0.59V in your screenshot
+        "vds_bias":  0.59,   # bias mirror devices around ~0.59V
         "vds_tail":  0.44,   # tail device VDS guess
 
         # Headroom design knobs
         "Vds_margin": 0.05,
-        "Vtail_guess": 0.20,   # start near 0.2V (script will bump up if tail needs more)
-        "Ntop_guess":  1.37,   # your screenshot shows ~1.374V-ish on top nodes
+        "Vtail_guess": 0.20,   # start near 0.2V 
+        "Ntop_guess":  1.37,  
     }
 
     results, bias = size_and_bias_telescopic(params, nch_2, pch_2)
