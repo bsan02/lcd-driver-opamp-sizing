@@ -1,24 +1,6 @@
 #!/usr/bin/env python3
 """
 Stage-1 folded cascode sizing + bias helper for EE140 LCD driver project.
-
-- Uses gm/Id lookup tables (nch_1v.mat, nch_2v.mat, pch_1v.mat, pch_2v.mat)
-  via look_up.py
-- Sizes M1–M12 (folded cascode, single-ended).
-- Computes a consistent DC bias stack that runs off VDDH = 1.8 V.
-- Outputs:
-    * Node voltages (tail, Nd, Nn, Vout, Nt, VDDH)
-    * Gate bias voltages Vbias1..4, Vbias_tail
-    * Device-level summary (W, L, Id, gm, ro, VGS, VOV)
-
-IMPORTANT DEVICE-TYPE GUIDELINE FOR YOUR DESIGN:
-  - M1, M2 (input NMOS)      : ***nmos2v***
-  - M3, M4 (bottom cascodes) : nmos1v or nmos2v (terminals < ~1.1 V)
-  - M5, M6 (folded NMOS)     : nmos1v or nmos2v (terminals < ~1.1 V)
-  - M7–M10 (top PMOS stack)  : ***pmos2v*** (they see VDDH = 1.8 V)
-  - M11, M12 (tail + mirror) : nmos2v (safest)
-
-You will still confirm all |VGS|, |VDS| < 1.8 V in Cadence.
 """
 
 import numpy as np
@@ -268,7 +250,6 @@ def size_and_bias_stage1(params, nch_1, nch_2, pch_1, pch_2):
     #   Nt    >= Vout    + vov7 + margin
     #   Nt    <= VDDH - (vov9 + margin)
     #
-    # We choose Nt in its allowed range, then back-calculate others.
     # -----------------------------------------------------------------
 
     vov1 = results["M1"]["vov"]
@@ -295,7 +276,7 @@ def size_and_bias_stage1(params, nch_1, nch_2, pch_1, pch_2):
         # Choose Nt in the middle of allowed interval for headroom
         Nt = 0.5 * (Nt_min + Nt_max)
 
-    # Now back-calculate the consistent node voltages
+    # back-calculate the consistent node voltages
     Vout = Nt - (vov7 + margin)
     Nn = Vout - (vov5 + margin)
     Nd = Nn - (vov3 + margin)
@@ -356,11 +337,6 @@ def size_and_bias_stage1(params, nch_1, nch_2, pch_1, pch_2):
     return results, bias
 
 
-# ---------------------------------------------------------------------
-# Pretty printing
-# ---------------------------------------------------------------------
-
-
 def print_results(results, bias):
     print("=== Stage-1 Folded Cascode – Device Summary ===")
     for key in sorted(results.keys(), key=lambda k: int(k[1:])):  # sort by M#
@@ -388,7 +364,7 @@ def print_results(results, bias):
     print(f"Vbias3 – PMOS cascodes (M7/M8) = {bias['Vbias3_casc_p']:.3f} V")
     print(f"Vbias4 – PMOS loads (M9/M10)   = {bias['Vbias4_load_p']:.3f} V")
     print(f"Vbias_tail – tail source (M11) = {bias['Vbias_tail']:.3f} V")
-    print("\nUse these as the DC values for V1..V4 (and tail) in your Cadence schematic.")
+    print("\nUse these as the DC values for V1..V4 (and tail) ")
 
 
 # ---------------------------------------------------------------------
