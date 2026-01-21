@@ -5,7 +5,6 @@ Stage-1 folded cascode sizing script.
 Uses gm/Id lookup tables (nch_1v.mat, nch_2v.mat, pch_1v.mat, pch_2v.mat)
 via look_up.py to size M1–M12 of a single-ended folded cascode op-amp stage.
 
-Beia Cabrera – EE140 Project
 """
 
 import numpy as np
@@ -246,11 +245,6 @@ def size_stage1_folded(params, nch_1, nch_2, pch_1, pch_2):
     )
 
     return results
-
-
-# ---------------------------------------------------------------------
-# Pretty printing
-# ---------------------------------------------------------------------
 
 
 def print_stage1_results(results, VDDH, Iref):
