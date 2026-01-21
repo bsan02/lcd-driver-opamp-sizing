@@ -15,14 +15,14 @@ The project combines **analog IC design** with a **software-style optimization w
 **Supplies / devices**
 - Designed around **VDDH = 1.8 V** and 2V devices (nmos2v/pmos2v) in the stack, with biasing arranged to keep devices in saturation while preserving output swing headroom. 
 
-## Software Workflow (for a software-first reader)
+## Software Workflow 
 
 Analog design becomes tractable when you treat it like constrained optimization:
 
 1. **Translate system specs → amplifier constraints**
    - Required loop gain to meet ≤0.2% total settling error, and closed-loop bandwidth implied by the settling-time target. 
 2. **Use gm/Id + LUT-driven sizing**
-   - LUTs map device operating points (e.g., gm/Id, VGS, VDS, ID) to sizing decisions (W/L).
+   - LUTs map device operating points (gm/Id, VGS, VDS, ID) to sizing decisions (W/L).
    - Iterated on gm/Id to balance gain vs parasitics/stability (backing off from overly aggressive gm/Id that inflated capacitances and reduced phase margin). 
 3. **Run parameter sweeps + constraint checks**
    - Scripts identify violations (headroom, stability, power) and guide the next sizing/bias iteration.
@@ -41,24 +41,7 @@ Final design meets the LCD driver requirements with margin:
 - **DC CMRR:** ~87 dB 
 - **DC PSRR @ VDDH:** ~51.7 dB  
 
-## Repository Structure
 
-- `proj_scripts/`
-  - Python scripts for LUT lookup, interpolation, parameter sweeps, and sizing decisions
-  - Supporting `.mat` LUT datasets (nMOS/pMOS tables)
-- `params/` / `*_tb/`
-  - Parameters and testbench-related artifacts (AC and transient validation)
-
-## How to Run (typical)
-
-> The scripts are written to support an iterative “size → evaluate → adjust” loop.  
-> Exact entry points depend on your local environment and LUT files in `proj_scripts/`.
-
-Typical flow:
-1. Load the LUT datasets (NMOS/PMOS)
-2. Choose target operating point ranges (gm/Id, branch currents, channel lengths)
-3. Run sizing scripts to emit candidate device dimensions and bias targets
-4. Validate in simulation (Cadence) and iterate
 
 ## Design Notes / Tradeoffs
 
