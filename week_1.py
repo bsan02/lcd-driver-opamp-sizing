@@ -1,13 +1,4 @@
 # week_1.py
-#
-# Week 1 system-level analysis helper script for EE140 LCD driver project
-# Uses the specs from the EE140 column (GND / 1.1 V, CL = 25 pF, etc.)
-#
-# Parts 2(a)–(c):
-#   - error budget → required loop gain
-#   - settling-time → dominant pole / closed-loop BW
-#   - gm1, gm2, R1, R2 for the compensation network
-#   - Bode plots for A_OL(s) and βA_OL(s)
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -92,17 +83,13 @@ def part2c_compensation(params):
     CL = 25e-12
 
     # Non-dom pole from desired phase margin
-    # NOTE: your snippet had "phase_margin = 6"; here I assume 60°.
     phase_margin_deg = 60.0
     wp2 = np.tan(np.deg2rad(90 - phase_margin_deg)) * wu
 
-    # gm2 driving CL plus some extra internal cap (here 3 pF)
     gm2 = wp2 * (CL + 3e-12)
 
-    # Product R1 * R2 from your relation
     R1R2 = Aopen / (gm2 * gm1)
 
-    # Choose split via gm1 R1 ≈ 115 (design choice)
     gm1R1 = 115.0
     R1 = gm1R1 / gm1
     R2 = R1R2 / R1
@@ -164,7 +151,7 @@ def make_bode_plots(params):
     plt.show()
 
 
-# ---------------------------- Init wrapper ----------------------------- #
+# ---------------------------- Init  ----------------------------- #
 
 def init_week1():
     """
@@ -195,7 +182,6 @@ def init_week1():
     print(f"R1                       = {params['R1']:.3e} Ω")
     print(f"R2                       = {params['R2']:.3e} Ω")
 
-    # Sanity check (similar to your prints)
     prod = params["gm1"] * params["gm2"] * params["R1"] * params["R2"]
     print(f"\nSanity: gm1*gm2*R1*R2    = {prod:.2f}")
 
